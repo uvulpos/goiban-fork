@@ -27,11 +27,12 @@ package goiban
 import (
 	"strconv"
 
-	"github.com/fourcube/goiban-data"
+	countryValidationRules "github.com/fourcube/goiban/countries/validation-rules"
+	data "github.com/fourcube/goiban/data"
 )
 
 func ValidateBankCode(iban *Iban, intermediateResult *ValidationResult, repo data.BankDataRepository) *ValidationResult {
-	length, ok := COUNTRY_CODE_TO_BANK_CODE_LENGTH[(iban.countryCode)]
+	length, ok := countryValidationRules.COUNTRY_CODE_TO_BANK_CODE_LENGTH[(iban.countryCode)]
 
 	if !ok {
 		intermediateResult.CheckResults["bankCode"] = false

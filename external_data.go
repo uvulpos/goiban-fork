@@ -27,10 +27,11 @@ package goiban
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"strings"
 
-	data "github.com/fourcube/goiban-data"
 	co "github.com/fourcube/goiban/countries"
+	countryValidationRules "github.com/fourcube/goiban/countries/validation-rules"
+	"github.com/fourcube/goiban/data"
 	"github.com/tealeg/xlsx"
 )
 
@@ -42,7 +43,7 @@ var (
 )
 
 func GetBic(iban *Iban, intermediateResult *ValidationResult, repo data.BankDataRepository) *ValidationResult {
-	length, ok := COUNTRY_CODE_TO_BANK_CODE_LENGTH[(iban.countryCode)]
+	length, ok := countryValidationRules.COUNTRY_CODE_TO_BANK_CODE_LENGTH[(iban.countryCode)]
 
 	if !ok {
 		intermediateResult.Messages = append(intermediateResult.Messages, "Cannot get BIC. No information available.")
@@ -64,16 +65,19 @@ func GetBic(iban *Iban, intermediateResult *ValidationResult, repo data.BankData
 
 	// issue #17 - Custom Rule for Commerzbank
 	//
-	// See https://www.eckd-kigst.de/fileadmin/user_upload/eckd/Downloads_KFM/Deutsche_Bundesbank_Uebersicht_der_IBAN_Regeln_Stand_Juni_2013.pdf
-	if iban.countryCode == "DE" &&
-		len(bankData.Bankcode) > 6 &&
-		bankData.Bankcode[3:6] == "400" {
+	// See https://www.eckd-kigst.de/fileadmin/user_upload/eckd/Downloads_KFM/Deutsche_Bundesbank_Uebersicht_der_IBAN_Regeln_Stand_Juni_2013.pdf <-- broken link
+	// See GitHub Issue: https://github.com/apilayer/goiban-service/issues/17
+	if iban.countryCode == "DE" && isCommerzbank(bankData) {
 		bankData.Bic = "COBADEFFXXX"
 	}
 
 	intermediateResult.BankData = *bankData
 
 	return intermediateResult
+}
+
+func isCommerzbank(bd *data.BankInfo) bool {
+	return len(bd.Bankcode) > 6 && bd.Bankcode[3:6] == "400"
 }
 
 func prepareSelectBankInformationStatement(db *sql.DB) {
@@ -114,97 +118,36 @@ func prepareSelectBicStatement(db *sql.DB) {
 	}
 }
 
-func ReadFileToEntries(path string, t interface{}, out chan interface{}) {
-	cLines := make(chan string)
-	switch t := t.(type) {
-	default:
-		fmt.Println("default:", t)
-	case *co.AustriaBankFileEntry:
-		go readLines(path, cLines)
-		var temp string
-		temp = <-cLines
-		if temp == "" {
-			out <- nil
-			return
+func ReadAustriaBankFileEntry(fileContent string) (result []*co.AustriaBankFileEntry) {
+	for _, line := range strings.Split(fileContent, "\n")[5:] {
+		if strings.TrimSpace(line) == "" {
+			continue
 		}
-		var num int
-		for l := range cLines {
-			num++
-			if num < 7 { //skip first six lines
-				continue
-			}
-			if len(l) == 0 {
-				out <- nil
-				return
-			}
-			out <- co.AustriaBankStringToEntry(l, COUNTRY_CODE_TO_BANK_CODE_LENGTH)
-		}
-	case *co.BundesbankFileEntry:
-		go readLines(path, cLines)
-		for l := range cLines {
-			if len(l) == 0 {
-				out <- nil
-				return
-			}
-			out <- co.BundesbankStringToEntry(l)
-		}
-	case *co.BelgiumFileEntry:
-		file, err := xlsx.FileToSlice(path)
-		if err != nil {
-			log.Fatalf("Couldn't read belgium file, %v", err)
-		}
-
-		rows := file[0]
-		// Skip header
-		for _, r := range rows[2:] {
-			entries := co.BelgiumRowToEntry(r)
-			if len(entries) > 0 {
-				out <- entries
-			}
-		}
-	case *co.NetherlandsFileEntry:
-		file, err := xlsx.FileToSlice(path)
-		if err != nil {
-			log.Fatalf("Couldn't read netherlands file, %v", err)
-		}
-
-		rows := file[0]
-		// Skip header
-		for _, r := range rows[2:] {
-			out <- co.NetherlandsRowToEntry(r)
-		}
-	case *co.LuxembourgFileEntry:
-		file, err := xlsx.FileToSlice(path)
-		if err != nil {
-			log.Fatalf("Couldn't read luxembourg file, %v", err)
-		}
-
-		rows := file[0]
-		// Skip header
-		for _, r := range rows[2:] {
-			out <- co.LuxembourgRowToEntry(r)
-		}
-	case *co.SwitzerlandFileEntry:
-		file, err := xlsx.FileToSlice(path)
-		if err != nil {
-			log.Fatalf("Couldn't read switzerland file, %v", err)
-		}
-
-		rows := file[0]
-		// Skip header
-		for _, r := range rows[2:] {
-			out <- co.SwitzerlandRowToEntry(r, COUNTRY_CODE_TO_BANK_CODE_LENGTH)
-		}
-	case *co.LiechtensteinFileEntry:
-		file, err := xlsx.FileToSlice(path)
-		if err != nil {
-			out <- nil
-			return
-		}
-		rows := file[0]
-		for _, r := range rows[1:] {
-			out <- co.LiechtensteinRowToEntry(r, COUNTRY_CODE_TO_BANK_CODE_LENGTH)
-		}
+		result = append(result, co.AustriaBankStringToEntry(line, countryValidationRules.COUNTRY_CODE_TO_BANK_CODE_LENGTH))
 	}
-	close(out)
+	return result
+}
+
+func ReadGermanBankFileEntry(fileContent string) (result []*co.GermanBankFileEntry) {
+	for _, line := range strings.Split(fileContent, "\n") {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		result = append(result, co.BundesbankStringToEntry(line))
+	}
+	return result
+}
+
+func xlsxFileToSlice(fileContent string) ([][][]string, error) {
+	xlsxFile, xlsxFileErr := xlsx.OpenBinary([]byte(fileContent))
+	if xlsxFileErr != nil {
+		return [][][]string{}, fmt.Errorf("Couldn't read xlsx file content, %v", xlsxFileErr)
+	}
+
+	file, fileErr := xlsxFile.ToSlice()
+	if fileErr != nil {
+		return [][][]string{}, fmt.Errorf("Couldn't read xlsx file content, %v", fileErr)
+	}
+
+	return file, nil
 }
