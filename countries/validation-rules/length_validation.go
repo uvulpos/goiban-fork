@@ -121,10 +121,11 @@ var (
 )
 
 /*
-	Returns the allowed length of an IBAN code for a certain country.
-			or -1 if the country code could not be looked up.
+Returns the allowed length of an IBAN code for a certain country.
+
+	or -1 if the country code could not be looked up.
 */
-func getAllowedLength(countryCode string) int {
+func GetAllowedLength(countryCode string) int {
 	var length int
 	var ok bool
 

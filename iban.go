@@ -29,6 +29,8 @@ import (
 	"math/big"
 	"strconv"
 	"strings"
+
+	countryValidationRules "github.com/fourcube/goiban/countries/validation-rules"
 )
 
 // describes the structure of an IBAN
@@ -49,7 +51,8 @@ func (i *Iban) GetCountryCode() string {
 	return i.countryCode
 }
 
-/**
+/*
+*
 Returns a pointer to an Iban instance or nil on structural errors.
 */
 func ParseToIban(val string) *Iban {
@@ -79,7 +82,7 @@ func CalculateIBAN(countryCode string, bankCode string, account string) *ParserR
 	account = padAccountNumber(bankCode, account, countryCode)
 
 	iban = strings.ToUpper(bankCode + account + countryCode + "00")
-	allowedLength := getAllowedLength(countryCode)
+	allowedLength := countryValidationRules.GetAllowedLength(countryCode)
 	if allowedLength > 0 && len(iban) != allowedLength {
 		return NewParserResult(false, "Invalid IBAN length. Check your country, bank code and account number for additional digits.", "")
 	}
@@ -107,7 +110,7 @@ func CalculateIBAN(countryCode string, bankCode string, account string) *ParserR
 }
 
 func padBankCode(bankCode string, countryCode string) string {
-	if length := COUNTRY_CODE_TO_BANK_CODE_LENGTH[countryCode]; length > 0 {
+	if length := countryValidationRules.COUNTRY_CODE_TO_BANK_CODE_LENGTH[countryCode]; length > 0 {
 		for len(bankCode) < length {
 			bankCode = "0" + bankCode
 		}
@@ -118,7 +121,7 @@ func padBankCode(bankCode string, countryCode string) string {
 
 func padAccountNumber(bankCode string, accountNumber string, countryCode string) string {
 	bankCodeLength := len(bankCode)
-	totalLength := COUNTRY_CODE_TO_LENGTH_MAP[countryCode]
+	totalLength := countryValidationRules.COUNTRY_CODE_TO_LENGTH_MAP[countryCode]
 	expectedLength := totalLength - bankCodeLength - 4 // subtract country code and check digits
 
 	if expectedLength < 1 {
@@ -133,7 +136,7 @@ func padAccountNumber(bankCode string, accountNumber string, countryCode string)
 }
 
 /*
-	Returns a pointer to a goiban.ValidationResult.
+Returns a pointer to a goiban.ValidationResult.
 */
 func (iban *Iban) Validate() *ValidationResult {
 	var ok bool
@@ -155,7 +158,7 @@ func (iban *Iban) Validate() *ValidationResult {
 }
 
 /*
-	Returns true if the string val can be parsed to an Iban Struct.
+Returns true if the string val can be parsed to an Iban Struct.
 */
 func IsParseable(val string) *ParserResult {
 	// Init empty Iban object
@@ -175,9 +178,9 @@ func IsParseable(val string) *ParserResult {
 }
 
 /*
-	Returns a country code from a string value representing an IBAN.
+Returns a country code from a string value representing an IBAN.
 
-	Can return an empty string if value is invalid.
+Can return an empty string if value is invalid.
 */
 func ExtractCountryCode(val string) string {
 	// has to be at least two digits long
@@ -196,9 +199,9 @@ func ExtractCountryCode(val string) string {
 }
 
 /*
-	Returns two check digits from a string value representing an IBAN.
+Returns two check digits from a string value representing an IBAN.
 
-	Can return an empty string if the value is invalid.
+Can return an empty string if the value is invalid.
 */
 func extractCheckDigit(val string) string {
 	// starts at position 2 and is 2 digits long
@@ -217,7 +220,7 @@ func extractCheckDigit(val string) string {
 }
 
 /*
-	Returns a BBAN from a string value representing an IBAN.
+Returns a BBAN from a string value representing an IBAN.
 */
 func extractBBAN(val string) (*ParserResult, bool) {
 	// replace all spaces
@@ -228,7 +231,7 @@ func extractBBAN(val string) (*ParserResult, bool) {
 	}
 
 	countryCode := ExtractCountryCode(val)
-	allowedLength := getAllowedLength(countryCode)
+	allowedLength := countryValidationRules.GetAllowedLength(countryCode)
 	if allowedLength > 0 && (len(val) != allowedLength) {
 		return NewParserResult(false, "IBAN length invalid. Expected length for "+countryCode+" is "+strconv.Itoa(allowedLength)+".", ""), false
 	}
@@ -246,11 +249,11 @@ func extractBBAN(val string) (*ParserResult, bool) {
 }
 
 /*
-	Returns a numeric representation of a two-character country code
+Returns a numeric representation of a two-character country code
 
-	e.g. DE -> 1314
+e.g. DE -> 1314
 
-	The char value is diminished by 55 and it's integer representation is concatenated onto a string.
+The char value is diminished by 55 and it's integer representation is concatenated onto a string.
 */
 func countryCodeToNumericString(countryCode string) string {
 	if len(countryCode) > 2 || len(countryCode) < 2 {

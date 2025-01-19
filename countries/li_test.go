@@ -1,20 +1,18 @@
 package countries
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+
+	countryValidationRules "github.com/fourcube/goiban/countries/validation-rules"
+	"gotest.tools/assert"
+)
 
 func TestCanConvertSliceToLiechtensteinBankEntry(t *testing.T) {
 	data := []string{"Bank Alpinum AG", "BALPLI22", "8801"}
-	entry := LiechtensteinRowToEntry(data)
+	entry := LiechtensteinRowToEntry(data, countryValidationRules.COUNTRY_CODE_TO_BANK_CODE_LENGTH)
 
-	if entry.Bankcode != "8801" {
-		t.Errorf("expected 8801 as bankcode, got %v", entry.Bankcode)
-	}
-
-	if entry.Bic != "BALPLI22" {
-		t.Errorf("expected BALPLI22 as bic, got %v", entry.Bic)
-	}
-
-	if entry.Name != "Bank Alpinum AG" {
-		t.Errorf("expected Bank Alpinum AG as name, got %v", entry.Name)
-	}
+	assert.Equal(t, entry.Bankcode, "08801", fmt.Sprintf("expected 08801 as bankcode, got %v", entry.Bankcode))
+	assert.Equal(t, entry.Bic, "BALPLI22", fmt.Sprintf("expected BALPLI22 as bic, got %v", entry.Bankcode))
+	assert.Equal(t, entry.Name, "Bank Alpinum AG", fmt.Sprintf("expected Bank Alpinum AG as name, got %v", entry.Bankcode))
 }

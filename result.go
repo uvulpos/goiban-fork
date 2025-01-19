@@ -24,10 +24,10 @@ THE SOFTWARE.
 
 package goiban
 
-import data "github.com/fourcube/goiban-data"
+import data "github.com/fourcube/goiban/data"
 
 /*
-	Represents the result of an IBAN validation.
+Represents the result of an IBAN validation.
 */
 type ValidationResult struct {
 	Valid        bool            `json:"valid"`
@@ -47,7 +47,7 @@ func NewValidationResult(valid bool, message string, iban string) *ValidationRes
 }
 
 /*
-	Represents the result of a parsing attempt.
+Represents the result of a parsing attempt.
 */
 type ParserResult struct {
 	Valid   bool   `json:"valid"`

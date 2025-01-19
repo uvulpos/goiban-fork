@@ -39,7 +39,7 @@ import (
 	100000001Bundesbank                                                10591Berlin                             BBk Berlin                 20100MARKDEF110009011380U000000000
 */
 
-type BundesbankFileEntry struct {
+type GermanBankFileEntry struct {
 	Bankcode  string // 8
 	M         int    // 1
 	Name      string // 58
@@ -56,14 +56,14 @@ type BundesbankFileEntry struct {
 	NewBankCode string // 8
 }
 
-func BundesbankStringToEntry(val string) *BundesbankFileEntry {
+func BundesbankStringToEntry(val string) *GermanBankFileEntry {
 	runeVal := []rune(val)
 	m, _ := strconv.Atoi(string(runeVal[8:9]))
 	pan, _ := strconv.Atoi(string(runeVal[134:139]))
 	id := string(runeVal[152:157])
 	toBeDeleted, _ := strconv.Atoi(string(runeVal[159:160]))
 
-	return &BundesbankFileEntry{
+	return &GermanBankFileEntry{
 		toTrimmedString(runeVal[0:8]),
 		m,
 		toTrimmedString(runeVal[9:67]),
@@ -81,7 +81,7 @@ func BundesbankStringToEntry(val string) *BundesbankFileEntry {
 }
 
 /*
-	Converts an array of runes to a trimmed string
+Converts an array of runes to a trimmed string
 */
 func toTrimmedString(runes []rune) string {
 	return s.TrimSpace(string(runes))
