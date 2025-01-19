@@ -27,8 +27,8 @@ package goiban
 import (
 	"strconv"
 
-	countryValidationRules "github.com/fourcube/goiban/countries/validation-rules"
-	data "github.com/fourcube/goiban/data"
+	countryValidationRules "github.com/uvulpos/goiban-fork/countries/validation-rules"
+	data "github.com/uvulpos/goiban-fork/data"
 )
 
 func ValidateBankCode(iban *Iban, intermediateResult *ValidationResult, repo data.BankDataRepository) *ValidationResult {

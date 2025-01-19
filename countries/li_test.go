@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	countryValidationRules "github.com/fourcube/goiban/countries/validation-rules"
+	countryValidationRules "github.com/uvulpos/goiban-fork/countries/validation-rules"
 	"gotest.tools/assert"
 )
 

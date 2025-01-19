@@ -30,8 +30,8 @@ import (
 	"os"
 	"testing"
 
-	data "github.com/fourcube/goiban/data"
 	_ "github.com/go-sql-driver/mysql"
+	data "github.com/uvulpos/goiban-fork/data"
 	"gotest.tools/assert"
 )
 

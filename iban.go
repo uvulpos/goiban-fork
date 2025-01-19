@@ -30,7 +30,7 @@ import (
 	"strconv"
 	"strings"
 
-	countryValidationRules "github.com/fourcube/goiban/countries/validation-rules"
+	countryValidationRules "github.com/uvulpos/goiban-fork/countries/validation-rules"
 )
 
 // describes the structure of an IBAN

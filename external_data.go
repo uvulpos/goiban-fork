@@ -29,10 +29,10 @@ import (
 	"fmt"
 	"strings"
 
-	co "github.com/fourcube/goiban/countries"
-	countryValidationRules "github.com/fourcube/goiban/countries/validation-rules"
-	"github.com/fourcube/goiban/data"
 	"github.com/tealeg/xlsx"
+	co "github.com/uvulpos/goiban-fork/countries"
+	countryValidationRules "github.com/uvulpos/goiban-fork/countries/validation-rules"
+	"github.com/uvulpos/goiban-fork/data"
 )
 
 var (
